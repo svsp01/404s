@@ -53,9 +53,6 @@ async function connectWithRetry(maxRetries: number = 3): Promise<MongoClient> {
         throw err;
       }
       await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2s before retry
-    }finally {
-      await client.close();
-      console.log(`🔄 Retrying connection... (${retries} retries left)`);
     }
   }
   throw new Error("Unexpected end of retry loop");
@@ -71,7 +68,6 @@ if (process.env.NODE_ENV === "development") {
       console.error("❌ MongoDB connection error (dev):", err);
       throw err; // Throw to prevent undefined clientPromise
     }
-    
   }
   clientPromise = global._mongoClientPromise;
   console.log("✅ Using cached MongoDB connection (dev)");
