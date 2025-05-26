@@ -232,13 +232,25 @@ DESIGN GUIDELINES:
 `;
 
     const fullPrompt = `${systemPrompt}\n\nUSER_DESCRIPTION:\n${prompt}`;
-
+    let result;
     console.log("Calling model.generateContent with final composed prompt...");
+    try {
+      console.log("Full prompt length:", fullPrompt.length);
 
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: fullPrompt,
-    });
+       result = await genAI.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: fullPrompt,
+      });
+      console.log("Generated content:", result);
+      if (!result || !result.text) {
+        console.error("Model response is empty or invalid");
+        throw new Error("Failed to generate content from AI model");
+      }
+      console.log("Model response received, processing...");
+    } catch (error) {
+      console.error("Error generating content:", error);
+      throw error;
+    }
 
     const text = result.text || "";
     console.log("Model response received, length:", text.length);
