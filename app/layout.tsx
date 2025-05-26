@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: '404s - AI-Powered 404 Page Generator',
     description: 'Create unique, custom 404 pages in seconds with our AI generator',
-    url: 'https://404s.com',
+    url: 'https://ai404s.netlify.app/',
     siteName: '404s',
     locale: 'en_US',
     type: 'website',
