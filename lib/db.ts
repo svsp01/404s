@@ -1,6 +1,6 @@
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
-const uri = 'mongodb+srv://sakthiVanta:Test1234@cluster0.mqvayle.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const uri = 'mongodb+srv://sakthiVanta:Test1234@cluster0.mqvayle.mongodb.net/Cluster0?retryWrites=true&w=majority';
 
 if (!uri) {
   console.error('❌ MONGODB_URI is not defined in environment variables');
