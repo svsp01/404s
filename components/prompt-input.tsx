@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { createNew404Page } from '@/lib/actions';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
@@ -29,8 +28,23 @@ export function PromptInput() {
 
     try {
       setIsLoading(true);
-      await createNew404Page(prompt);
-      
+
+      // Make a POST request to the /api/aicreate endpoint
+      const response = await fetch('/api/aicreate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create 404 page');
+      }
+
+      const data = await response.json();
+      console.log('Created 404 page:', data);
+
       toast({
         title: "Success!",
         description: "Your 404 page has been created",
