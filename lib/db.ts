@@ -1,6 +1,6 @@
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
-const uri = 'mongodb+srv://sakthiVanta:Test1234@cluster0.mqvayle.mongodb.net/Cluster0?retryWrites=true&w=majority';
+const uri = process.env.MONGODB_URI;
 
 if (!uri) {
   console.error('❌ MONGODB_URI is not defined in environment variables');
@@ -16,7 +16,6 @@ const options = {
   },
 };
 
-let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 declare global {
