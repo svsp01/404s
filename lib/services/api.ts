@@ -2,7 +2,10 @@ import axios from 'axios';
 import { Page404 } from '@/app/api/aicreate/route';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || ''
+  baseURL: process.env.NEXT_PUBLIC_API_URL || '',
+  headers: {
+    'Access-Control-Allow-Origin': '*',
+  }
 });
 
 export const page404Api = {
