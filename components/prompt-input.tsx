@@ -38,9 +38,9 @@ export function PromptInput() {
         body: JSON.stringify({ prompt }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create 404 page');
-      }
+      // if (!response.ok) {
+      //   throw new Error('Failed to create 404 page');
+      // }
 
       const data = await response.json();
       console.log('Created 404 page:', data);
