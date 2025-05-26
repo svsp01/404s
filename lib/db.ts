@@ -12,17 +12,8 @@ console.log('✅ Loaded MONGODB_URI:', uri.replace(/:.*@/, ':<hidden>@')); // Sa
 const options = {
   serverApi: {
     version: ServerApiVersion.v1,
-    strict: true,
     deprecationErrors: true,
   },
-  connectTimeoutMS: 120000, // Increased to 120s for Lambda cold starts
-  serverSelectionTimeoutMS: 120000, // Increased to 120s for replica set selection
-  socketTimeoutMS: 120000, // Increased to 120s to prevent socket hangs
-  maxPoolSize: 10, // Limit connections for Lambda
-  minPoolSize: 1, // Ensure at least one connection
-  maxIdleTimeMS: 10000, // Close idle connections quickly
-  retryWrites: true, // Enable retryable writes for Atlas
-  w: 'majority', // Ensure writes are replicated to majority
 };
 
 let client: MongoClient;
