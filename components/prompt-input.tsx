@@ -7,6 +7,8 @@ import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { page404Api } from '@/lib/services/api';
+import axios from 'axios';
 
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
@@ -28,21 +30,7 @@ export function PromptInput() {
 
     try {
       setIsLoading(true);
-
-      // Make a POST request to the /api/aicreate endpoint
-      const response = await fetch('/api/aicreate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      // if (!response.ok) {
-      //   throw new Error('Failed to create 404 page');
-      // }
-
-      const data = await response.json();
+      const data = await page404Api.create(prompt);
       console.log('Created 404 page:', data);
 
       toast({
@@ -51,14 +39,16 @@ export function PromptInput() {
       });
       
       setPrompt('');
-      router.refresh(); // Refresh the page to show the new 404 page
+      router.refresh();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create 404 page. Please try again.",
+        description: axios.isAxiosError(error) 
+          ? error.response?.data?.error || "Failed to create 404 page. Please try again."
+          : "Failed to create 404 page. Please try again.",
         variant: "destructive",
       });
-      console.log(error);
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
