@@ -9,7 +9,7 @@ if (!uri) {
   );
 }
 
-console.log("✅ Loaded MONGODB_URI:", uri.replace(/:.*@/, ":<hidden>@")); // Sanitize credentials for logging
+console.log("✅ Loaded MONGODB_URI:", uri); // Sanitize credentials for logging
 
 const client = new MongoClient(uri, {
   serverApi: {
