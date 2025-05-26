@@ -29,19 +29,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
+    if (typeof prompt !== 'string' || prompt.trim().length === 0) {
+      return NextResponse.json({ error: 'Prompt must be a non-empty string' }, { status: 400 });
+    }
+
     console.log('Starting createNew404Page with prompt:', prompt);
-    const client = await clientPromise;
+    const client = await clientPromise.catch(error => {
+      throw new Error('Database connection failed');
+    });
     console.log('MongoDB client connected:', !!client);
 
     const db = client.db("404forge");
     console.log('Database selected: 404forge');
 
     console.log('Generating 404 page content with prompt:', prompt);
-    const generatedContent = await generate404Page(prompt);
+    const generatedContent = await generate404Page(prompt).catch(error => {
+      throw new Error('Failed to generate 404 page content');
+    });
     console.log('Generated content:', {
       htmlVersionLength: generatedContent.htmlVersion?.length,
       nextjsVersionLength: generatedContent.nextjsVersion?.length
     });
+
+    if (!generatedContent.htmlVersion || !generatedContent.nextjsVersion) {
+      throw new Error('Generated content is incomplete');
+    }
 
     console.log('Preparing document for MongoDB insertion');
     const page404: MongoPage404 = {
@@ -53,7 +65,9 @@ export async function POST(request: NextRequest) {
     console.log('Prepared document:', page404);
 
     console.log('Inserting document into MongoDB collection "pages"');
-    const result = await db.collection("pages").insertOne(page404);
+    const result = await db.collection("pages").insertOne(page404).catch(error => {
+      throw new Error('Failed to insert document into database');
+    });
     console.log('Insert result:', {
       acknowledged: result.acknowledged,
       insertedId: result.insertedId.toString()
@@ -70,12 +84,48 @@ export async function POST(request: NextRequest) {
     console.log('Return value:', returnValue);
 
     return NextResponse.json(returnValue, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating 404 page:', error);
-    return NextResponse.json({ error: 'Failed to create 404 page' }, { status: 500 });
+
+    // Handle specific error cases
+    if (error.message.includes('Database connection failed')) {
+      return NextResponse.json(
+        { error: 'Unable to connect to the database. Please try again later.' },
+        { status: 503 } // Service Unavailable
+      );
+    }
+    if (error.message.includes('Failed to generate 404 page content')) {
+      return NextResponse.json(
+        { error: 'Failed to generate the 404 page content. Please check your prompt and try again.' },
+        { status: 500 }
+      );
+    }
+    if (error.message.includes('Generated content is incomplete')) {
+      return NextResponse.json(
+        { error: 'Generated 404 page content is incomplete. Please try again.' },
+        { status: 500 }
+      );
+    }
+    if (error.message.includes('Failed to insert document')) {
+      return NextResponse.json(
+        { error: 'Failed to save the 404 page to the database. Please try again.' },
+        { status: 500 }
+      );
+    }
+    if (error.name === 'MongoServerSelectionError') {
+      return NextResponse.json(
+        { error: 'Database server selection timed out. Please try again later.' },
+        { status: 503 } // Service Unavailable
+      );
+    }
+
+    // Fallback for unknown errors
+    return NextResponse.json(
+      { error: 'An unexpected error occurred while creating the 404 page.' },
+      { status: 500 }
+    );
   }
 }
-
 // GET handler to retrieve all 404 pages
 export async function GET() {
   try {
