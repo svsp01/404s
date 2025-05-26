@@ -58,7 +58,7 @@ export function PromptInput() {
         description: "Failed to create 404 page. Please try again.",
         variant: "destructive",
       });
-      console.error(error);
+      console.log(error);
     } finally {
       setIsLoading(false);
     }
