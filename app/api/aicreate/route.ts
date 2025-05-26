@@ -237,7 +237,7 @@ DESIGN GUIDELINES:
     try {
       console.log("Full prompt length:", fullPrompt.length);
 
-       result = await genAI.models.generateContent({
+      result = await genAI.models.generateContent({
         model: "gemini-2.0-flash",
         contents: fullPrompt,
       });
@@ -273,6 +273,13 @@ DESIGN GUIDELINES:
     };
   } catch (error) {
     console.error("Error generating 404 page:", error);
-    throw error;
+    NextResponse.json(
+      { error: "Failed to generate 404 page content" },
+      { status: 500 }
+    );
+    return {
+      htmlVersion: '',
+      nextjsVersion: ''
+    };
   }
 }
