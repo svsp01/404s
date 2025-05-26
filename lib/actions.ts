@@ -23,34 +23,51 @@ interface MongoPage404 {
 }
 
 export async function createNew404Page(prompt: string): Promise<Page404> {
+  console.log('Starting createNew404Page with prompt:', prompt);
+  
   const client = await clientPromise;
+  console.log('MongoDB client connected:', !!client);
+
   const db = client.db("404forge");
+  console.log('Database selected: 404forge');
 
   try {
-    // Generate the 404 page content using Gemini
+    console.log('Generating 404 page content with prompt:', prompt);
     const generatedContent = await generate404Page(prompt);
+    console.log('Generated content:', {
+      htmlVersionLength: generatedContent.htmlVersion?.length,
+      nextjsVersionLength: generatedContent.nextjsVersion?.length
+    });
 
-    // Prepare the document to insert
+    console.log('Preparing document for MongoDB insertion');
     const page404: MongoPage404 = {
       prompt,
       htmlVersion: generatedContent.htmlVersion,
       nextjsVersion: generatedContent.nextjsVersion,
       createdAt: new Date(),
     };
+    console.log('Prepared document:', page404);
 
-    // Insert the document into MongoDB
+    console.log('Inserting document into MongoDB collection "pages"');
     const result = await db.collection("pages").insertOne(page404);
-    
-    // Return the document with string ID for client usage
-    return {
+    console.log('Insert result:', {
+      acknowledged: result.acknowledged,
+      insertedId: result.insertedId.toString()
+    });
+
+    console.log('Returning formatted document for client');
+    const returnValue = {
       _id: result.insertedId.toString(),
       prompt: page404.prompt,
       htmlVersion: page404.htmlVersion,
       nextjsVersion: page404.nextjsVersion,
       createdAt: page404.createdAt
     };
+    console.log('Return value:', returnValue);
+    
+    return returnValue;
   } catch (error) {
-    console.error("Error creating 404 page:", error);
+    console.error('Error creating 404 page:', error);
     throw error;
   }
 }
