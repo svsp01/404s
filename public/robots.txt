@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://ai404s.netlify.app/sitemap.xml
+
+# Optional: Crawl delay (in seconds) - uncomment if needed
+# Crawl-delay: 1
