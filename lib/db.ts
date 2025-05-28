@@ -3,85 +3,98 @@ import { MongoClient, ServerApiVersion } from "mongodb";
 const uri = process.env.MONGODB_URI;
 
 if (!uri) {
-  console.error("❌ MONGODB_URI is not defined in environment variables");
-  throw new Error(
-    "Please define the MONGODB_URI environment variable in .env.local"
-  );
+  throw new Error("MONGODB_URI environment variable is not defined");
 }
 
-console.log("✅ Loaded MONGODB_URI:", uri); // Sanitize credentials for logging
-
-const client = new MongoClient(uri, {
+// Optimized connection options for serverless environments
+const options = {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
   },
-});
+  // Serverless-friendly options
+  maxPoolSize: 1, // Limit connection pool for serverless
+  serverSelectionTimeoutMS: 5000, // 5 second timeout
+  socketTimeoutMS: 45000, // 45 second socket timeout
+  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+  // Note: bufferMaxEntries and bufferCommands are Mongoose options, not MongoDB driver options
+};
 
+let client: MongoClient | null = null;
 let clientPromise: Promise<MongoClient>;
 
+// Declare global type for development caching
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-async function connectWithRetry(maxRetries: number = 3): Promise<MongoClient> {
-  let retries = maxRetries;
-  while (retries > 0) {
-    try {
-      console.log(
-        `🔄 Connecting to MongoDB (attempt ${
-          maxRetries - retries + 1
-        }/${maxRetries})...`
-      );
-      await client.connect();
-      await client.db("404forge").command({ ping: 1 }); // Test connection
-      console.log("✅ MongoDB connection established");
-      console.log(
-        "Pinged your deployment. You successfully connected to MongoDB!"
-      );
-
-      return client;
-    } catch (err) {
-      console.error(
-        `❌ MongoDB connection attempt failed (retries left: ${retries - 1}):`,
-        err
-      );
-      retries--;
-      if (retries === 0) {
-        console.error("❌ Max retries reached, connection failed");
-        throw err;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2s before retry
-    }
+async function createMongoConnection(): Promise<MongoClient> {
+  try {
+    console.log("🔄 Creating new MongoDB connection...");
+    
+    const mongoClient = new MongoClient(uri as string, options);
+    await mongoClient.connect();
+    
+    // Test the connection
+    await mongoClient.db("404forge").command({ ping: 1 });
+    console.log("✅ MongoDB connected successfully");
+    
+    return mongoClient;
+  } catch (error) {
+    console.error("❌ MongoDB connection failed:", error);
+    throw error;
   }
-  throw new Error("Unexpected end of retry loop");
 }
 
+// Connection logic optimized for serverless
 if (process.env.NODE_ENV === "development") {
+  // In development, use a global variable to preserve the connection
   if (!global._mongoClientPromise) {
-    try {
-      console.log("🔄 Initiating MongoDB connection (dev)...");
-      global._mongoClientPromise = connectWithRetry();
-      console.log("✅ MongoDB connection initiated (dev)");
-    } catch (err) {
-      console.error("❌ MongoDB connection error (dev):", err);
-      throw err; // Throw to prevent undefined clientPromise
-    }
+    global._mongoClientPromise = createMongoConnection();
   }
   clientPromise = global._mongoClientPromise;
-  console.log("✅ Using cached MongoDB connection (dev)");
 } else {
-  console.log("🔄 Initiating MongoDB connection (prod)...");
-  clientPromise = connectWithRetry()
-    .then((client) => {
-      console.log("✅ MongoDB connection established (prod)");
-      return client;
-    })
-    .catch((err) => {
-      console.error("❌ MongoDB connection error (prod):", err);
-      throw err;
-    });
+  // In production (Netlify), create a new connection for each cold start
+  clientPromise = createMongoConnection().then(connectedClient => {
+    client = connectedClient; // Store reference
+    return connectedClient;
+  });
 }
 
+// Helper function to get connected client with error handling
+export async function getMongoClient(): Promise<MongoClient> {
+  try {
+    if (!clientPromise) {
+      clientPromise = createMongoConnection();
+    }
+    
+    const connectedClient = await clientPromise;
+    
+    // Verify connection is still alive
+    await connectedClient.db("404forge").command({ ping: 1 });
+    
+    return connectedClient;
+  } catch (error) {
+    console.error("❌ Error getting MongoDB client:", error);
+    // Reset the promise to allow retry
+    clientPromise = createMongoConnection();
+    return await clientPromise;
+  }
+}
+
+// Helper function to safely close connection (useful for cleanup)
+export async function closeMongoConnection(): Promise<void> {
+  try {
+    if (client) {
+      await client.close();
+      client = null; // Reset reference
+      console.log("✅ MongoDB connection closed");
+    }
+  } catch (error) {
+    console.error("❌ Error closing MongoDB connection:", error);
+  }
+}
+
+// Export the default promise for backward compatibility
 export default clientPromise;
