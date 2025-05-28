@@ -1,4 +1,4 @@
-import { getAll404Pages } from "@/lib/actions";
+// import { getAll404Pages } from "@/lib/actions";
 import { PromptInput } from "@/components/prompt-input";
 import { PageGrid } from "@/components/page-grid";
 import { HeaderSection } from "@/components/header-section";
