@@ -3,10 +3,11 @@ import { PromptInput } from "@/components/prompt-input";
 import { PageGrid } from "@/components/page-grid";
 import { HeaderSection } from "@/components/header-section";
 import MainContent from "@/components/main-content";
+import { page404Api } from "@/lib/services/api";
 
 export default async function Home() {
   // Get all 404 pages from the database
-  const pages = await getAll404Pages();
+  const pages = await page404Api.getAll();
 
   return (
     <div className="min-h-screen flex flex-col">
