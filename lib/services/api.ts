@@ -10,12 +10,24 @@ const api = axios.create({
 
 export const page404Api = {
   create: async (prompt: string): Promise<Page404> => {
-    const { data } = await api.post<Page404>('/api/aicreate', { prompt });
-    return data;
+    console.log('page404Api.create() - calling API with prompt:', prompt);
+    try {
+      const { data } = await api.post<Page404>('/api/aicreate', { prompt });
+      console.log('page404Api.create() - API responded with:', data);
+      return data;
+    } catch (error) {
+      console.error('page404Api.create() - API call failed:', error);
+      throw error;
+    }
   },
   
   getAll: async (): Promise<Page404[]> => {
-    const { data } = await api.get<Page404[]>('/api/aicreate');
-    return data;
+    try {
+      const { data } = await api.get<Page404[]>('/api/aicreate');
+      return data;
+    } catch (error) {
+      console.error('page404Api.getAll() - API call failed:', error);
+      throw error;
+    }
   }
 };
